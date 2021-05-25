@@ -8,7 +8,7 @@ defmodule Padlock.MixProject do
     [
       app: :padlock,
       version: @version,
-      elixir: "~> 1.12",
+      elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
