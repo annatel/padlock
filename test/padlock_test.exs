@@ -34,7 +34,7 @@ defmodule PadlockTest do
     assert_receive :before_lock_2
 
     refute_receive :after_lock_2, 500
-    assert_receive :after_lock_1, 700
+    assert_receive :after_lock_1
     assert_receive :after_lock_2
   end
 end
