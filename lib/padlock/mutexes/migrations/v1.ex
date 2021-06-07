@@ -1,4 +1,4 @@
-defmodule Padlock.Migrations.V1 do
+defmodule Padlock.Mutexes.Migrations.V1 do
   @moduledoc false
 
   use Ecto.Migration
