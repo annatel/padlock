@@ -7,9 +7,9 @@ defmodule Padlock.SoftLock do
     quote bind_quoted: [opts: opts] do
       import Ecto.Schema
 
-      locked_until_timestamp_type = Keyword.get(opts, :locked_until_timestamp_type, :utc_datetime)
+      timestamps_type = Keyword.get(opts, :timestamps_type, :utc_datetime)
 
-      field(:locked_until, locked_until_timestamp_type)
+      field(:locked_until, timestamps_type)
       field(:lock_version, :integer, default: 1)
     end
   end
@@ -21,11 +21,11 @@ defmodule Padlock.SoftLock do
       import Ecto.Schema
 
       @default_lock_retention 30 * 1_000
-      @locked_until_timestamp_type Keyword.get(
-                                     opts,
-                                     :locked_until_timestamp_type,
-                                     :utc_datetime
-                                   )
+      @timestamps_type Keyword.get(
+                         opts,
+                         :timestamps_type,
+                         :utc_datetime
+                       )
 
       def default_soft_lock_retention() do
         Application.get_env(:padlock, :default_soft_lock_retention) || @default_lock_retention
@@ -41,9 +41,9 @@ defmodule Padlock.SoftLock do
               {:ok, struct} | {:error, any}
       def with_lock(resource, fun, retention \\ default_soft_lock_retention())
           when is_struct(resource) and is_function(fun, 1) do
-        do_lock(resource, retention)
+        acquire_lock(resource, retention)
         |> case do
-          resource when is_struct(resource) -> apply_fun(fun, resource)
+          {:ok, resource} when is_struct(resource) -> apply_fun_and_release_lock(fun, resource)
           {:error, "locked"} -> {:error, "locked"}
         end
       end
@@ -58,25 +58,25 @@ defmodule Padlock.SoftLock do
         end
       end
 
-      defp apply_fun(fun, %{__struct__: _} = resource) when is_function(fun, 1) do
+      defp apply_fun_and_release_lock(fun, %{__struct__: _} = resource)
+           when is_function(fun, 1) do
         case fun.(resource) do
           {:ok, resource} when is_struct(resource) ->
-            {:ok,
-             resource
-             |> release_changeset()
-             |> Padlock.repo().update!()}
+            {:ok, release_lock!(resource)}
 
           {:error, _} = error ->
+            release_lock!(resource)
             error
         end
       end
 
-      defp do_lock(resource, retention) do
+      defp acquire_lock(resource, retention) do
         if free?(resource) do
           try do
-            resource
-            |> lock_changeset(retention)
-            |> Padlock.repo().update!()
+            {:ok,
+             resource
+             |> lock_changeset(retention)
+             |> Padlock.repo().update!()}
           rescue
             Ecto.StaleEntryError ->
               {:error, "locked"}
@@ -84,6 +84,12 @@ defmodule Padlock.SoftLock do
         else
           {:error, "locked"}
         end
+      end
+
+      defp release_lock!(resource) do
+        resource
+        |> release_changeset()
+        |> Padlock.repo().update!()
       end
 
       defp lock_changeset(resource, retention) when is_integer(retention) do
@@ -98,7 +104,7 @@ defmodule Padlock.SoftLock do
       end
 
       def utc_now() do
-        case @locked_until_timestamp_type do
+        case @timestamps_type do
           :utc_datetime -> DateTime.utc_now() |> DateTime.truncate(:second)
           _ -> DateTime.utc_now()
         end

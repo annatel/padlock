@@ -7,10 +7,9 @@ defmodule Padlock.SoftLock.Migration do
       Adds `:locked_until` and `:lock_version` timestamp columns.
       """
       def soft_lock_fields(opts \\ []) do
-        locked_until_timestamp_type =
-          Keyword.get(opts, :locked_until_timestamp_type, :utc_datetime)
+        timestamps_type = Keyword.get(opts, :timestamps_type, :utc_datetime)
 
-        add(:locked_until, locked_until_timestamp_type, null: true)
+        add(:locked_until, timestamps_type, null: true)
         add(:lock_version, :integer, null: false, default: 1)
       end
     end
