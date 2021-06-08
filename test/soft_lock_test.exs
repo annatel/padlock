@@ -29,6 +29,9 @@ defmodule Padlock.SoftLockTest do
 
           {:ok, resource}
         end)
+
+      resource = Padlock.repo().reload(resource)
+      assert {:ok, _} = TestSoftLockResource.with_lock(resource, &{:ok, &1})
     end
 
     test "can't lock the resource if it has an active lock" do
@@ -49,11 +52,14 @@ defmodule Padlock.SoftLockTest do
       assert {:ok, _} = TestSoftLockResource.with_lock(resource, &{:ok, &1})
     end
 
-    test "when the function returns an error" do
+    test "when the function returns an error, release the lock" do
       resource = %TestSoftLockResource{locked_until: nil} |> Padlock.repo().insert!()
 
       assert {:error, "error"} =
                TestSoftLockResource.with_lock(resource, fn _ -> {:error, "error"} end)
+
+      resource = Padlock.repo().reload(resource)
+      assert {:ok, _} = TestSoftLockResource.with_lock(resource, &{:ok, &1})
     end
 
     test "race condition" do
