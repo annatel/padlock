@@ -54,7 +54,7 @@ defmodule Padlock.SoftLock do
             true
 
           %{locked_until: %DateTime{} = locked_until} ->
-            locked_until < utc_now()
+            DateTime.compare(locked_until, DateTime.utc_now()) == :lt
         end
       end
 
@@ -93,21 +93,16 @@ defmodule Padlock.SoftLock do
       end
 
       defp lock_changeset(resource, retention) when is_integer(retention) do
+        utc_now = DateTime.utc_now()
+
         resource
-        |> change(locked_until: DateTime.add(utc_now(), retention, :millisecond))
+        |> cast(%{locked_until: DateTime.add(utc_now, retention, :millisecond)}, [:locked_until])
         |> optimistic_lock(:lock_version)
       end
 
       defp release_changeset(resource) do
         resource
         |> change(locked_until: nil)
-      end
-
-      def utc_now() do
-        case @timestamps_type do
-          :utc_datetime -> DateTime.utc_now() |> DateTime.truncate(:second)
-          _ -> DateTime.utc_now()
-        end
       end
     end
   end
