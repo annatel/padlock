@@ -12,7 +12,7 @@ The package can be installed by adding `padlock` to your list of dependencies in
 ```elixir
 def deps do
   [
-    {:padlock, "~> 0.1.1"}
+    {:padlock, "~> 0.2.0"}
   ]
 end
 ```
