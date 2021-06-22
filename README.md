@@ -12,23 +12,42 @@ The package can be installed by adding `padlock` to your list of dependencies in
 ```elixir
 def deps do
   [
-    {:padlock, "~> 0.1.0"}
+    {:padlock, "~> 0.1.1"}
   ]
 end
 ```
 
-After the packages are installed you must create a database migration for each version to add the padlock tables to your database:
+After the packages are installed you must create a database migration for each version to add the padlock tables to your database.
+
+For mutexes:
 
 ```elixir
 defmodule Padlock.TestRepo.Migrations.CreatePadlockTables do
   use Ecto.Migration
 
   def up do
-    Padlock.Migrations.up()
+    Padlock.Mutexes.Migrations.V1.up()
   end
 
   def down do
-    Padlock.Migrations.down()
+    Padlock.Mutexes.Migrations.V1.down()
+  end
+end
+
+```
+
+For soft_lock:
+
+```elixir
+defmodule Padlock.TestRepo.Migrations.CreatePadlockTables do
+  use Ecto.Migration
+
+  def up do
+    Padlock.SoftLock.Migration.up()
+  end
+
+  def down do
+    Padlock.SoftLock.Migration.down()
   end
 end
 
