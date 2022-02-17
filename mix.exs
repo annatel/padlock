@@ -55,7 +55,7 @@ defmodule Padlock.MixProject do
   end
 
   defp description() do
-    "Record events"
+    "Mutex and soft lock"
   end
 
   defp package() do
